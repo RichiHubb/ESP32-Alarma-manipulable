@@ -4,18 +4,17 @@ require 'config.php';
 
 $obj = new BD_PDO();
 
-// se verifica que se hayan enviado los parametros 
-$mov = $_POST['movimiento'];
+// Se verifica que se hayan enviado los parámetros 
+if (isset($_POST['movimiento'])) {
+    $mov = $_POST['movimiento']; 
 
+    // Se usa consulta segura con parámetros preparados
+    $sql = "INSERT INTO movimiento(movimiento) VALUES(?)";
+    $obj->Ejecutar_Instruccion($sql, [$mov]);
 
-
-if(isset($_POST['movimiento']))
-{
-	// Esta sección sería si se desea enviar los datos por el método POST
-	$obj->Ejecutar_Instruccion("Insert into movimiento(movimiento) values($mov)");
+    echo "Movimiento registrado correctamente.";
+} elseif (isset($_GET['disp'])) {
+    // Aquí puedes manejar la lógica para GET si la necesitas
 }
-elseif (isset($_GET['disp'])) 
-{
-	
-}
+
 ?>
