@@ -46,41 +46,43 @@ void apagar_rele() {
 }
 
 void enviar_datos_a_servidor() {
-    if(WiFi.status() == WL_CONNECTED){
-        WiFiClient client;
-        HTTPClient http;
+    // Solo enviar datos si hay movimiento detectado
+    if (movimientoDetectado) {
+        if (WiFi.status() == WL_CONNECTED) {
+            WiFiClient client;
+            HTTPClient http;
 
-        // Leer el estado del sensor PIR
-        movimientoDetectado = digitalRead(PIR_PIN);
+            // Preparar los datos POST a enviar
+            String httpRequestData = "movimiento=1&rele=" + String(estadoRele ? "1" : "0");
 
-        // Preparar los datos POST a enviar
-        String httpRequestData = "movimiento=" + String(movimientoDetectado ? "1" : "0") + "&rele=" + String(estadoRele ? "1" : "0");
+            Serial.print("httpRequestData: ");
+            Serial.println(httpRequestData);
 
-        Serial.print("httpRequestData: ");
-        Serial.println(httpRequestData);
+            // Iniciar la conexión HTTP
+            http.begin(client, serverName);
 
-        // Iniciar la conexión HTTP
-        http.begin(client, serverName);
-        
-        // Especificar el content type para el header del POST
-        http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-        
-        // Enviar los datos por POST
-        int httpResponseCode = http.POST(httpRequestData);
+            // Especificar el content type para el header del POST
+            http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-        // Verificar la respuesta del servidor
-        if (httpResponseCode > 0) {
-            Serial.print("HTTP Codigo de respuesta: ");
-            Serial.println(httpResponseCode);
+            // Enviar los datos por POST
+            int httpResponseCode = http.POST(httpRequestData);
+
+            // Verificar la respuesta del servidor
+            if (httpResponseCode > 0) {
+                Serial.print("HTTP Codigo de respuesta: ");
+                Serial.println(httpResponseCode);
+            } else {
+                Serial.print("Codigo de error: ");
+                Serial.println(httpResponseCode);
+            }
+
+            // Cerrar la conexión HTTP
+            http.end();
         } else {
-            Serial.print("Codigo de error: ");
-            Serial.println(httpResponseCode);
+            Serial.println("Desconectado del wifi");
         }
-
-        // Cerrar la conexión HTTP
-        http.end();
     } else {
-        Serial.println("Desconectado del wifi");
+        Serial.println("No se detecta movimiento, no se envían datos.");
     }
 }
 
@@ -115,14 +117,7 @@ void loop() {
     // Verificar si hubo un cambio en el estado del sensor PIR
     if (estadoActualPIR != ultimoEstadoPIR) {
         ultimoEstadoPIR = estadoActualPIR;
-        enviar_datos_a_servidor();  // Enviar datos al servidor cuando se detecta un cambio
-    }
-
-    // Enviar datos al servidor cada 30 segundos
-    static unsigned long lastTime = 0;
-    unsigned long currentTime = millis();
-    if (currentTime - lastTime >= 30000) {
-        lastTime = currentTime;
-        enviar_datos_a_servidor();
+        movimientoDetectado = estadoActualPIR; // Actualizar el estado de movimiento
+        enviar_datos_a_servidor();  // Enviar datos al servidor solo si hay movimiento
     }
 }
