@@ -3,19 +3,21 @@
 #include <HTTPClient.h>
 
 // Configuración WiFi
-const char* ssid = "richiAIOT";
-const char* password = "hola12345";
+const char* ssid = "rica123";
+const char* password = "hola1234";
 
 // Configuración del servidor web
 WebServer server(80);
 
 // URL del servidor remoto
-const char* serverName = "http://192.168.181.110/AIOT/Practica/tacos/config/peticiones_bd.php";
+const char* serverName = "http://192.168.137.1/AIOT/Practica/tacos/config/peticiones_bd.php";
 
 // Pines
 #define PIR_PIN 27   // Sensor PIR
 #define RELE_PIN 26  // Relé
 #define BUZZER_PIN 25 // Buzzer
+#define LED_ROJO_PIN 32 // LED rojo
+#define LED_AZUL_PIN 33 // LED azul
 
 // Variables
 bool estadoRele = LOW;
@@ -109,12 +111,23 @@ void alarmaSirena() {
     }
 }
 
+// Efecto de color policial
+void efectoPolicial() {
+    digitalWrite(LED_ROJO_PIN, HIGH);
+    digitalWrite(LED_AZUL_PIN, LOW);
+    delay(200); // Tiempo de encendido del LED rojo
+    digitalWrite(LED_ROJO_PIN, LOW);
+    digitalWrite(LED_AZUL_PIN, HIGH);
+    delay(200); // Tiempo de encendido del LED azul
+}
 
 void setup() {
     Serial.begin(115200);
     pinMode(RELE_PIN, OUTPUT);
     pinMode(PIR_PIN, INPUT);
     pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(LED_ROJO_PIN, OUTPUT);
+    pinMode(LED_AZUL_PIN, OUTPUT);
 
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
@@ -148,7 +161,16 @@ void loop() {
         tiempoUltimaDeteccion = millis(); // Actualizar tiempo de última detección
         ultimoEstadoPIR = estadoActualPIR;
         enviar_datos_a_servidor("movimiento", estadoActualPIR);
+
+        // Activar el efecto policial
+        while (digitalRead(PIR_PIN) == HIGH) {
+            efectoPolicial();
+        }
     }
+
+    // Apagar los LEDs si no hay movimiento
+    digitalWrite(LED_ROJO_PIN, LOW);
+    digitalWrite(LED_AZUL_PIN, LOW);
 
     // Mantener el sonido de la sirena activo
     alarmaSirena();
