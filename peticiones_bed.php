@@ -21,4 +21,18 @@ if (isset($_POST['movimiento'])) {
     // Si no se enviaron los parámetros
     echo "Error: Parámetro 'movimiento' no encontrado.";
 }
+
+// Verificar si se enviaron los parámetros por POST o GET
+if (isset($_POST['rele'])) {
+    // Si se enviaron por POST
+    $rele = $_POST['rele'];
+    $obj->Ejecutar_Instruccion("INSERT INTO rele(estado) VALUES ($rele)");
+} elseif (isset($_GET['rele'])) {
+    // Si se enviaron por GET
+    $rele = $_GET['rele'];
+    $obj->Ejecutar_Instruccion("INSERT INTO rele(estado) VALUES ($rele)");
+} else {
+    // Si no se enviaron los parámetros
+    echo "Error: Parámetro 'rele' no encontrado.";
+}
 ?>
