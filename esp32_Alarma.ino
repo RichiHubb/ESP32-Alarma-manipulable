@@ -15,6 +15,7 @@ const char* serverName = "http://192.168.181.110/AIOT/Practica/tacos/config/peti
 // Pines
 #define PIR_PIN 27   // Sensor PIR
 #define RELE_PIN 26  // Relé
+#define BUZZER_PIN 25 // Buzzer
 
 // Variables
 bool estadoRele = LOW;
@@ -83,10 +84,37 @@ void enviar_datos_a_servidor(String tipo, bool estado) {
     }
 }
 
+// 🔊 Secuencia de inicio de alarma
+void alarmaInicio() {
+    int notas[] = {741, 741, 741}; // Frecuencias en Hz
+    int duraciones[] = {300, 300, 300}; // Duraciones en ms
+
+    for (int i = 0; i < 3; i++) {
+        tone(BUZZER_PIN, notas[i]); // Generar tono
+        delay(duraciones[i]);
+        noTone(BUZZER_PIN); // Apagar buzzer
+        delay(100);
+    }
+}
+
+// 🚨 Sonido de sirena alternando frecuencias
+void alarmaSirena() {
+    for (int i = 800; i <= 1500; i += 70) { // Subida más aguda
+        tone(BUZZER_PIN, i);
+        delay(40);
+    }
+    for (int i = 1500; i >= 800; i -= 70) { // Bajada más rápida
+        tone(BUZZER_PIN, i);
+        delay(40);
+    }
+}
+
+
 void setup() {
     Serial.begin(115200);
     pinMode(RELE_PIN, OUTPUT);
     pinMode(PIR_PIN, INPUT);
+    pinMode(BUZZER_PIN, OUTPUT);
 
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
@@ -103,6 +131,10 @@ void setup() {
     server.on("/rele/off", apagar_rele);
 
     server.begin();
+
+    // Iniciar la alarma
+    Serial.println("Iniciando alarma...");
+    alarmaInicio();
 }
 
 void loop() {
@@ -117,4 +149,7 @@ void loop() {
         ultimoEstadoPIR = estadoActualPIR;
         enviar_datos_a_servidor("movimiento", estadoActualPIR);
     }
+
+    // Mantener el sonido de la sirena activo
+    alarmaSirena();
 }
