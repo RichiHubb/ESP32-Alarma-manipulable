@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
+#include <HTTPClient.h>
 
 // Configuración WiFi
 const char* ssid = "Milaneso 2.4";
@@ -7,6 +8,9 @@ const char* password = "Cheetoinflamable2050";
 
 // Configuración del servidor web
 WebServer server(80);
+
+// URL del servidor remoto
+const char* serverName = "http://192.168.100.7/AIOT/Practica 3 y 4/tacos/config/peticiones_bd.php";
 
 // Pines
 #define PIR_PIN 27   // Sensor PIR
@@ -28,6 +32,7 @@ void devolver_info() {
 void encender_rele() {
     digitalWrite(RELE_PIN, HIGH);
     estadoRele = HIGH;
+    enviar_datos_a_servidor();
     devolver_info();
 }
 
@@ -35,7 +40,48 @@ void encender_rele() {
 void apagar_rele() {
     digitalWrite(RELE_PIN, LOW);
     estadoRele = LOW;
+    enviar_datos_a_servidor();
     devolver_info();
+}
+
+// Función para enviar datos al servidor remoto
+void enviar_datos_a_servidor() {
+    if(WiFi.status() == WL_CONNECTED){
+        WiFiClient client;
+        HTTPClient http;
+
+        // Leer el estado del sensor PIR
+        movimientoDetectado = digitalRead(PIR_PIN);
+
+        // Preparar los datos POST a enviar
+        String httpRequestData = "movimiento=" + String(movimientoDetectado ? "1" : "0") + "&rele=" + String(estadoRele ? "1" : "0");
+
+        Serial.print("httpRequestData: ");
+        Serial.println(httpRequestData);
+
+        // Iniciar la conexión HTTP
+        http.begin(client, serverName);
+        
+        // Especificar el content type para el header del POST
+        http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        
+        // Enviar los datos por POST
+        int httpResponseCode = http.POST(httpRequestData);
+
+        // Verificar la respuesta del servidor
+        if (httpResponseCode > 0) {
+            Serial.print("HTTP Codigo de respuesta: ");
+            Serial.println(httpResponseCode);
+        } else {
+            Serial.print("Codigo de error: ");
+            Serial.println(httpResponseCode);
+        }
+
+        // Cerrar la conexión HTTP
+        http.end();
+    } else {
+        Serial.println("Desconectado del wifi");
+    }
 }
 
 void setup() {
@@ -62,4 +108,11 @@ void setup() {
 
 void loop() {
     server.handleClient();
+    // Enviar datos al servidor cada 30 segundos
+    static unsigned long lastTime = 0;
+    unsigned long currentTime = millis();
+    if (currentTime - lastTime >= 30000) {
+        lastTime = currentTime;
+        enviar_datos_a_servidor();
+    }
 }
