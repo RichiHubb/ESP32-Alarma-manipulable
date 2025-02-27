@@ -23,34 +23,41 @@
 
         
         <link href="css/styles.css" rel="stylesheet" />
-       <script>
-            // Función para actualizar el estado del relé
-            async function actualizarEstadoRele() {
-                try {
-                    const respuesta = await fetch("http://192.168.100.19/"); // Cambia la IP por la de tu ESP32
-                    const datos = await respuesta.json();
-                    document.getElementById("estadoRele").innerText = datos.estado;
-                } catch (error) {
-                    console.error("Error al actualizar el estado del relé:", error);
-                }
+         <script>
+    // Función para actualizar el estado del relé
+    async function actualizarEstadoRele() {
+        try {
+            const respuesta = await fetch("http://192.168.100.19/"); // Cambia la IP por la de tu ESP32
+            if (!respuesta.ok) {
+                throw new Error("Error en la respuesta del servidor");
             }
+            const datos = await respuesta.json();
+            document.getElementById("estadoRele").innerText = datos.estado;
+        } catch (error) {
+            console.error("Error al actualizar el estado del relé:", error);
+            document.getElementById("estadoRele").innerText = "Error";
+        }
+    }
 
-            // Función para cambiar el estado del relé (ON/OFF)
-            async function cambiarEstado(accion) {
-                try {
-                    await fetch(`http://192.168.100.19/rele/${accion}`); // Cambia la IP por la de tu ESP32
-                    actualizarEstadoRele(); // Actualiza el estado después de cambiar
-                } catch (error) {
-                    console.error("Error al cambiar el estado del relé:", error);
-                }
+    // Función para cambiar el estado del relé (ON/OFF)
+    async function cambiarEstado(accion) {
+        try {
+            const respuesta = await fetch(`http://192.168.100.19/rele/${accion}`); // Cambia la IP por la de tu ESP32
+            if (!respuesta.ok) {
+                throw new Error("Error al cambiar el estado del relé");
             }
+            actualizarEstadoRele(); // Actualiza el estado después de cambiar
+        } catch (error) {
+            console.error("Error al cambiar el estado del relé:", error);
+        }
+    }
 
-            // Actualiza el estado del relé cada 2 segundos
-            setInterval(actualizarEstadoRele, 2000);
+    // Actualiza el estado del relé cada 2 segundos
+    setInterval(actualizarEstadoRele, 2000);
 
-            // Actualiza el estado al cargar la página
-            window.onload = actualizarEstadoRele;
-        </script>
+    // Actualiza el estado al cargar la página
+    window.onload = actualizarEstadoRele;
+</script>
         <script src="js/distancias.js" defer></script>
     </head>
     <body id="page-top">
@@ -97,6 +104,7 @@
                     
                     <button class="btn btn-success" onclick="cambiarEstado('on')">Encender Relé</button>
                     <button class="btn btn-danger" onclick="cambiarEstado('off')">Apagar Relé</button>
+                    <div id="ledIndicator" style="width: 20px; height: 20px; border-radius: 50%; background-color: gray; display: inline-block;"></div>
                 </div>
             </div>
         </section>
