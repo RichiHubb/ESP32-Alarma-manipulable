@@ -10,7 +10,7 @@ const char* password = "Cheetoinflamable2050";
 WebServer server(80);
 
 // URL del servidor remoto
-const char* serverName = "http://192.168.100.7/AIOT/Practica 3 y 4/tacos/config/peticiones_bd.php";
+const char* serverName = "http://192.168.100.7/AIOT/Practica/tacos/config/peticiones_bd.php";
 
 // Pines
 #define PIR_PIN 27   // Sensor PIR
@@ -19,6 +19,7 @@ const char* serverName = "http://192.168.100.7/AIOT/Practica 3 y 4/tacos/config/
 // Variables
 bool estadoRele = LOW;
 bool movimientoDetectado = false;
+bool ultimoEstadoPIR = LOW;
 
 // Función para obtener el estado del sensor PIR
 void devolver_info() {
@@ -44,7 +45,6 @@ void apagar_rele() {
     devolver_info();
 }
 
-// Función para enviar datos al servidor remoto
 void enviar_datos_a_servidor() {
     if(WiFi.status() == WL_CONNECTED){
         WiFiClient client;
@@ -108,6 +108,16 @@ void setup() {
 
 void loop() {
     server.handleClient();
+
+    // Leer el estado actual del sensor PIR
+    bool estadoActualPIR = digitalRead(PIR_PIN);
+
+    // Verificar si hubo un cambio en el estado del sensor PIR
+    if (estadoActualPIR != ultimoEstadoPIR) {
+        ultimoEstadoPIR = estadoActualPIR;
+        enviar_datos_a_servidor();  // Enviar datos al servidor cuando se detecta un cambio
+    }
+
     // Enviar datos al servidor cada 30 segundos
     static unsigned long lastTime = 0;
     unsigned long currentTime = millis();
