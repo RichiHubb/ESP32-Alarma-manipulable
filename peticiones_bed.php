@@ -2,19 +2,27 @@
 
 require 'config.php';
 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
+header("Access-Control-Allow-Methods: GET, POST");
+header("Allow: GET, POST");
+
 $obj = new BD_PDO();
 
-// Se verifica que se hayan enviado los parámetros 
-if (isset($_POST['movimiento'])) {
-    $mov = $_POST['movimiento']; 
+// se verifica que se hayan enviado los parametros 
+$mov = $_POST['movimiento'];
 
-    // Se usa consulta segura con parámetros preparados
-    $sql = "INSERT INTO movimiento(movimiento) VALUES(?)";
-    $obj->Ejecutar_Instruccion($sql, [$mov]);
 
-    echo "Movimiento registrado correctamente.";
-} elseif (isset($_GET['disp'])) {
-    // Aquí puedes manejar la lógica para GET si la necesitas
+
+if(isset($_POST['movimiento']))
+{
+	// Esta sección sería si se desea enviar los datos por el método POST
+	$obj->Ejecutar_Instruccion("Insert into movimientos(deteccion) values($mov)");
 }
+elseif (isset($_GET['movimiento'])) 
+{
+	$mov = $_GET['movimiento'];
 
+	$obj->Ejecutar_Instruccion("Insert into movimientos(deteccion) values($mov)");
+}
 ?>
