@@ -1,5 +1,4 @@
 <?php
-
 require 'config.php';
 
 header("Access-Control-Allow-Origin: *");
@@ -9,20 +8,17 @@ header("Allow: GET, POST");
 
 $obj = new BD_PDO();
 
-// se verifica que se hayan enviado los parametros 
-$mov = $_POST['movimiento'];
-
-
-
-if(isset($_POST['movimiento']))
-{
-	// Esta sección sería si se desea enviar los datos por el método POST
-	$obj->Ejecutar_Instruccion("Insert into movimientos(deteccion) values($mov)");
-}
-elseif (isset($_GET['movimiento'])) 
-{
-	$mov = $_GET['movimiento'];
-
-	$obj->Ejecutar_Instruccion("Insert into movimientos(deteccion) values($mov)");
+// Verificar si se enviaron los parámetros por POST o GET
+if (isset($_POST['movimiento'])) {
+    // Si se enviaron por POST
+    $mov = $_POST['movimiento'];
+    $obj->Ejecutar_Instruccion("INSERT INTO movimientos(deteccion) VALUES ($mov)");
+} elseif (isset($_GET['movimiento'])) {
+    // Si se enviaron por GET
+    $mov = $_GET['movimiento'];
+    $obj->Ejecutar_Instruccion("INSERT INTO movimientos(deteccion) VALUES ($mov)");
+} else {
+    // Si no se enviaron los parámetros
+    echo "Error: Parámetro 'movimiento' no encontrado.";
 }
 ?>
