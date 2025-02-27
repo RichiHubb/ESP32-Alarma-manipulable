@@ -3,14 +3,14 @@
 #include <HTTPClient.h>
 
 // Configuración WiFi
-const char* ssid = "Milaneso 2.4";
-const char* password = "Cheetoinflamable2050";
+const char* ssid = "richiAIOT";
+const char* password = "hola12345";
 
 // Configuración del servidor web
 WebServer server(80);
 
 // URL del servidor remoto
-const char* serverName = "http://192.168.100.7/AIOT/Practica/tacos/config/peticiones_bd.php";
+const char* serverName = "http://192.168.181.110/AIOT/Practica/tacos/config/peticiones_bd.php";
 
 // Pines
 #define PIR_PIN 27   // Sensor PIR
@@ -18,12 +18,13 @@ const char* serverName = "http://192.168.100.7/AIOT/Practica/tacos/config/petici
 
 // Variables
 bool estadoRele = LOW;
-bool movimientoDetectado = false;
 bool ultimoEstadoPIR = LOW;
+unsigned long tiempoUltimaDeteccion = 0; // Guarda el tiempo de la última detección
+const unsigned long delayPIR = 5000; // Delay de 5 segundos
 
 // Función para obtener el estado del sensor PIR
 void devolver_info() {
-    movimientoDetectado = digitalRead(PIR_PIN);
+    bool movimientoDetectado = digitalRead(PIR_PIN);
     String datos = "{\"movimiento\": \"" + String(movimientoDetectado ? "Detectado" : "No Detectado") + "\", \"rele\": \"" + (estadoRele ? "ON" : "OFF") + "\"}";
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", datos);
@@ -33,56 +34,52 @@ void devolver_info() {
 void encender_rele() {
     digitalWrite(RELE_PIN, HIGH);
     estadoRele = HIGH;
-    enviar_datos_a_servidor();
-    devolver_info();
+    enviar_datos_a_servidor("rele", estadoRele);
+    devolver_info();  
 }
 
 // Función para apagar el relé
 void apagar_rele() {
     digitalWrite(RELE_PIN, LOW);
     estadoRele = LOW;
-    enviar_datos_a_servidor();
-    devolver_info();
+    enviar_datos_a_servidor("rele", estadoRele);
+    devolver_info();  
 }
 
-void enviar_datos_a_servidor() {
-    // Solo enviar datos si hay movimiento detectado
-    if (movimientoDetectado) {
-        if (WiFi.status() == WL_CONNECTED) {
-            WiFiClient client;
-            HTTPClient http;
+// Función para enviar datos a la base de datos
+void enviar_datos_a_servidor(String tipo, bool estado) {
+    if (WiFi.status() == WL_CONNECTED) {
+        WiFiClient client;
+        HTTPClient http;
 
-            // Preparar los datos POST a enviar
-            String httpRequestData = "movimiento=1&rele=" + String(estadoRele ? "1" : "0");
+        // Preparar los datos POST a enviar
+        String httpRequestData = tipo + "=" + String(estado ? "1" : "0");
 
-            Serial.print("httpRequestData: ");
-            Serial.println(httpRequestData);
+        Serial.print("httpRequestData: ");
+        Serial.println(httpRequestData);
 
-            // Iniciar la conexión HTTP
-            http.begin(client, serverName);
+        // Iniciar la conexión HTTP
+        http.begin(client, serverName);
 
-            // Especificar el content type para el header del POST
-            http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        // Especificar el content type para el header del POST
+        http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-            // Enviar los datos por POST
-            int httpResponseCode = http.POST(httpRequestData);
+        // Enviar los datos por POST
+        int httpResponseCode = http.POST(httpRequestData);
 
-            // Verificar la respuesta del servidor
-            if (httpResponseCode > 0) {
-                Serial.print("HTTP Codigo de respuesta: ");
-                Serial.println(httpResponseCode);
-            } else {
-                Serial.print("Codigo de error: ");
-                Serial.println(httpResponseCode);
-            }
-
-            // Cerrar la conexión HTTP
-            http.end();
+        // Verificar la respuesta del servidor
+        if (httpResponseCode > 0) {
+            Serial.print("HTTP Codigo de respuesta: ");
+            Serial.println(httpResponseCode);
         } else {
-            Serial.println("Desconectado del wifi");
+            Serial.print("Codigo de error: ");
+            Serial.println(httpResponseCode);
         }
+
+        // Cerrar la conexión HTTP
+        http.end();
     } else {
-        Serial.println("No se detecta movimiento, no se envían datos.");
+        Serial.println("Desconectado del wifi");
     }
 }
 
@@ -114,10 +111,10 @@ void loop() {
     // Leer el estado actual del sensor PIR
     bool estadoActualPIR = digitalRead(PIR_PIN);
 
-    // Verificar si hubo un cambio en el estado del sensor PIR
-    if (estadoActualPIR != ultimoEstadoPIR) {
+    // Si se detecta movimiento y ha pasado el tiempo de delay
+    if (estadoActualPIR && millis() - tiempoUltimaDeteccion >= delayPIR) {
+        tiempoUltimaDeteccion = millis(); // Actualizar tiempo de última detección
         ultimoEstadoPIR = estadoActualPIR;
-        movimientoDetectado = estadoActualPIR; // Actualizar el estado de movimiento
-        enviar_datos_a_servidor();  // Enviar datos al servidor solo si hay movimiento
+        enviar_datos_a_servidor("movimiento", estadoActualPIR);
     }
 }
