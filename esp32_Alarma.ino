@@ -2,14 +2,14 @@
 #include <WebServer.h>
 
 // Configuración WiFi
-const char* ssid = "richiAIOT";
-const char* password = "hola12345";
+const char* ssid = "Milaneso 2.4";
+const char* password = "Cheetoinflamable2050";
 
 // Configuración del servidor web
 WebServer server(80);
 
 // Pines
-#define PIR_PIN 13   // Sensor PIR
+#define PIR_PIN 27   // Sensor PIR
 #define RELE_PIN 26  // Relé
 
 // Variables
